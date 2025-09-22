@@ -1,0 +1,32 @@
+name: Deploy to Aliyun ECS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npm run build
+      - uses: appleboy/scp-action@v0.1.5
+        with:
+          host: 120.24.109.29
+          username: root
+          key: ${{ secrets.PRIVATE_KEY }}
+          source: "dist/*"
+          target: "/root/webapp"
+          strip_components: 1
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 120.24.109.29
+          username: root
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: |
+            cd /root/webapp
+            pm2 reload webapp || pm2 start index.js --name webapp
