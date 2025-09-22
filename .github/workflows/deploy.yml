@@ -1,4 +1,4 @@
-name: Deploy to Aliyun ECS
+name: Deploy SpringBoot to Aliyun ECS
 
 on:
   push:
@@ -7,26 +7,43 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 1. 拉代码
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      # 2. 设置 JDK 17（跟你项目一致即可，11/8 改版本号）
+      - name: Set up JDK
+        uses: actions/setup-java@v4
         with:
-          node-version: 18
-      - run: npm ci
-      - run: npm run build
-      - uses: appleboy/scp-action@v0.1.5
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3.  Maven 打包（Gradle 看下方备注）
+      - name: Build with Maven
+        run: mvn -B clean package -DskipTests
+
+      # 4. 把生成的 jar 传到服务器
+      - name: Upload jar to server
+        uses: appleboy/scp-action@v0.1.5
         with:
           host: 120.24.109.29
           username: root
           key: ${{ secrets.PRIVATE_KEY }}
-          source: "dist/*"
-          target: "/root/webapp"
-          strip_components: 1
-      - uses: appleboy/ssh-action@v1.0.3
+          source: "target/*.jar"
+          target: "/root/springboot"
+          strip_components: 1   # 去掉 target 目录层
+
+      # 5. 重启服务
+      - name: Restart application
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: 120.24.109.29
           username: root
           key: ${{ secrets.PRIVATE_KEY }}
           script: |
-            cd /root/webapp
-            pm2 reload webapp || pm2 start index.js --name webapp
+            cd /root/springboot
+            # 停旧进程（如果之前用 nohup 启动）
+            pkill -f 'java -jar' || true
+            # 启动新 jar，监听 9011 端口，后台运行
+            nohup java -jar *.jar --server.port=9011 > app.log 2>&1 &
