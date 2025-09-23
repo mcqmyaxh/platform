@@ -41,12 +41,10 @@ jobs:
           host: 120.24.109.29
           username: root
           key: ${{ secrets.PRIVATE_KEY }}
-          command_timeout: 30s   # 显式给 30 秒足够
+          timeout: 30s          # 官方文档写的是 timeout
           script: |
             cd /root/springboot
             pkill -f 'java -jar' || true
-            # 启动并立即脱离，不再占用终端
             nohup java -jar *.jar --server.port=9011 > app.log 2>&1 &
-            # 给 JVM 1 秒启动时间，再打印一句确保 Actions 认为“有输出”
-            sleep 1
+            sleep 2
             echo "SpringBoot restarted on port 9011"
