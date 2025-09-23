@@ -6,6 +6,8 @@ import com.example.yuanqu.Customer.mapper.GeneratedContentMapper;
 import com.example.yuanqu.Customer.service.GeneratedContentService;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
+
 /**
  * 出租表 服务层实现。
  *
@@ -14,5 +16,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMapper, GeneratedContent>  implements GeneratedContentService{
+
+    @Resource GeneratedContentMapper generatedContentMapper;
+
 
 }
