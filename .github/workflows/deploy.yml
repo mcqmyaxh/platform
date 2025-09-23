@@ -12,14 +12,14 @@ jobs:
       # 1. 拉代码
       - uses: actions/checkout@v4
 
-      # 2. 设置 JDK 17（跟你项目一致即可，11/8 改版本号）
+      # 2. 设置 JDK 21
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      # 3.  Maven 打包（Gradle 看下方备注）
+      # 3. Maven 打包
       - name: Build with Maven
         run: mvn -B clean package -DskipTests
 
@@ -32,9 +32,9 @@ jobs:
           key: ${{ secrets.PRIVATE_KEY }}
           source: "target/*.jar"
           target: "/root/springboot"
-          strip_components: 1   # 去掉 target 目录层
+          strip_components: 1
 
-      # 5. 重启服务
+      # 5. 重启服务（修复版本）
       - name: Restart application
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -43,11 +43,38 @@ jobs:
           key: ${{ secrets.PRIVATE_KEY }}
           script: |
             cd /root/springboot
-            pkill -f 'java -jar' || true
-            # 启动 jar 并脱离终端
+            
+            # 方案1：使用端口检查的方式（推荐）
+            echo "Checking for existing process on port 9011..."
+            PID=$(lsof -ti:9011 || echo "")
+            if [ ! -z "$PID" ]; then
+              echo "Killing existing process: $PID"
+              kill -9 $PID
+              sleep 3
+            else
+              echo "No existing process found on port 9011"
+            fi
+            
+            # 备份旧日志
+            if [ -f app.log ]; then
+              cp app.log "app.log.$(date +%Y%m%d_%H%M%S).bak"
+            fi
+            
+            # 启动新进程
+            echo "Starting new SpringBoot application..."
             nohup java -jar *.jar --server.port=9011 > app.log 2>&1 &
-            # 等 1 秒让 JVM 起来，再输出一句，确保 Actions 认为“有结果”
-            sleep 1
-            echo "SpringBoot restarted on port 9011"
-            # 关键：主动退出 0，告诉 Actions“我跑完了”
-            exit 0
+            
+            # 等待启动并检查
+            sleep 5
+            
+            # 检查进程是否启动成功
+            NEW_PID=$(lsof -ti:9011 || echo "")
+            if [ ! -z "$NEW_PID" ]; then
+              echo "✅ SpringBoot restarted successfully on port 9011 (PID: $NEW_PID)"
+              echo "📝 Log file: /root/springboot/app.log"
+            else
+              echo "❌ Failed to restart SpringBoot application"
+              echo "=== Last 50 lines of app.log ==="
+              tail -50 app.log || echo "No log file found"
+              exit 1
+            fi
