@@ -4,9 +4,10 @@ import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.example.yuanqu.Customer.entity.GeneratedContent;
 import com.example.yuanqu.Customer.mapper.GeneratedContentMapper;
 import com.example.yuanqu.Customer.service.GeneratedContentService;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+
 
 /**
  * 出租表 服务层实现。
@@ -17,7 +18,8 @@ import javax.annotation.Resource;
 @Service
 public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMapper, GeneratedContent>  implements GeneratedContentService{
 
-    @Resource GeneratedContentMapper generatedContentMapper;
+    @Resource
+    GeneratedContentMapper generatedContentMapper;
 
 
 }
