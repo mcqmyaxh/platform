@@ -43,27 +43,6 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
     </properties>
 
-    <!-- 1. 依赖管理：全局强制替换 annotations-api -->
-    <dependencyManagement>
-        <dependencies>
-            <!-- 全局禁用老包 -->
-            <dependency>
-                <groupId>org.apache.tomcat</groupId>
-                <artifactId>tomcat-annotations-api</artifactId>
-                <version>0.0.0</version>
-                <scope>provided</scope>
-                <optional>true</optional>
-            </dependency>
-
-            <!-- 强制使用 jakarta 新版 -->
-            <dependency>
-                <groupId>jakarta.annotation</groupId>
-                <artifactId>jakarta.annotation-api</artifactId>
-                <version>2.1.1</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <!--       Disruptor 核心库 -->
         <dependency>
@@ -425,10 +404,11 @@
 
     <build>
         <plugins>
+            <!-- 编译器插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version> <!-- 当前最新版 -->
+                <version>3.11.0</version>
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
@@ -451,54 +431,41 @@
                     </annotationProcessorPaths>
                     <source>21</source>
                     <target>21</target>
-                    <release>21</release> <!-- 更现代的方式 -->
+                    <release>21</release>
                     <fork>true</fork>
                     <!--suppress UnresolvedMavenProperty -->
                     <executable>${JAVA_HOME}/bin/javac</executable>
-                    <!--                        <executable>&lt;!&ndash; 可选：指定 javac 路径 &ndash;&gt;</executable>-->
                 </configuration>
             </plugin>
 
+            <!-- 跳过测试 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId> <!-- 测试使用到的插件 -->
+                <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-
-                    <skip>true</skip><!-- 声明跳过测试 -->
+                    <skip>true</skip>
                 </configuration>
             </plugin>
+
+            <!-- Spring Boot 打包插件：官方剔除 tomcat-annotations-api -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>com.example.yuanqu.YuanquApplication</mainClass>
+                    <!-- 关键：剔除老包 -->
+                    <excludes>
+                        <exclude>
+                            <groupId>org.apache.tomcat</groupId>
+                            <artifactId>tomcat-annotations-api</artifactId>
+                        </exclude>
+                    </excludes>
                 </configuration>
                 <executions>
-                    <execution><goals><goal>repackage</goal></goals></execution>
-                </executions>
-            </plugin>
-
-            <!-- 新增：打包后物理删除 tomcat-annotations-api -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
                     <execution>
-                        <phase>package</phase>
-                        <goals><goal>run</goal></goals>
-                        <configuration>
-                            <target>
-                                <!-- 解压 jar -->
-                                <unzip src="${project.build.finalName}.jar" dest="${project.build.directory}/unpacked"/>
-                                <!-- 删除老包 -->
-                                <delete file="${project.build.directory}/unpacked/BOOT-INF/lib/tomcat-annotations-api-6.0.53.jar"/>
-                                <!-- 重新打包 -->
-                                <zip destfile="${project.build.finalName}.jar" basedir="${project.build.directory}/unpacked"/>
-                                <!-- 清理临时目录 -->
-                                <delete dir="${project.build.directory}/unpacked"/>
-                            </target>
-                        </configuration>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
