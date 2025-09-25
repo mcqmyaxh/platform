@@ -471,27 +471,37 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <!-- 主类 -->
                     <mainClass>com.example.yuanqu.YuanquApplication</mainClass>
-                    <!-- 物理剔除老包 -->
-                    <excludes>
-                        <exclude>
-                            <groupId>org.apache.tomcat</groupId>
-                            <artifactId>tomcat-annotations-api</artifactId>
-                        </exclude>
-                    </excludes>
                 </configuration>
                 <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
+                    <execution><goals><goal>repackage</goal></goals></execution>
                 </executions>
             </plugin>
 
+            <!-- 新增：打包后物理删除 tomcat-annotations-api -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <!-- 解压 jar -->
+                                <unzip src="${project.build.finalName}.jar" dest="${project.build.directory}/unpacked"/>
+                                <!-- 删除老包 -->
+                                <delete file="${project.build.directory}/unpacked/BOOT-INF/lib/tomcat-annotations-api-6.0.53.jar"/>
+                                <!-- 重新打包 -->
+                                <zip destfile="${project.build.finalName}.jar" basedir="${project.build.directory}/unpacked"/>
+                                <!-- 清理临时目录 -->
+                                <delete dir="${project.build.directory}/unpacked"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
-
-
     </build>
 </project>
