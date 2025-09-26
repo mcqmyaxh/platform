@@ -21,5 +21,4 @@ public interface ManagementAdminService extends IService<ManagementAdmin> {
     ManagementAdmin getAdmin(ManagementAdmin managementAdmin);
 
     List<ManagementAdmin> listAdmins(ManagementAdmin managementAdmin);
-
 }

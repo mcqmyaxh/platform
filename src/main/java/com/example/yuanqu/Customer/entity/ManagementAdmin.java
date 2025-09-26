@@ -52,13 +52,22 @@ public class ManagementAdmin implements Serializable {
     private String realName;
 
     /**
-     * 逻辑删除 0-正常 1-已删除
+     * 手机号
      */
-    private Boolean isDelete;
+    private String phone;
 
     /**
-     * 更新时间
+     * 权限等级: 0-待审核,10-H5,11-管理后台,20-超管
      */
+    private Integer permissionLevel;
+
+    /**
+     * 逻辑删除
+     */
+    private Integer isDelete;
+
+    private LocalDateTime gmtCreate;
+
     private LocalDateTime gmtModified;
 
 }
