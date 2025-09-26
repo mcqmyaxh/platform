@@ -19,7 +19,8 @@ import org.springframework.stereotype.Service;
 public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMapper, GeneratedContent>  implements GeneratedContentService{
 
     @Resource
-    GeneratedContentMapper generatedContentMapper;
+    private GeneratedContentMapper generatedContentMapper;
+
 
 
 }

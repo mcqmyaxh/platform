@@ -17,7 +17,7 @@ public class Codegen {
         // 创建全局配置
         GlobalConfig globalConfig = new GlobalConfig();
         globalConfig.setBasePackage("com.example.yuanqu.Customer"); // 设置根包名
-        globalConfig.setGenerateTable("generated_content"); // 指定生成哪些表//
+        globalConfig.setGenerateTable("management_admin"); // 指定生成哪些表//
         //KKHourse.sys_menu
         //KKHourse.sys_role
         //KKHourse.sys_role_menu
