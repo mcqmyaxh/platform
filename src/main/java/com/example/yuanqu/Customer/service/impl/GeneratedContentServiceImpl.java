@@ -1,6 +1,8 @@
 package com.example.yuanqu.Customer.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.mybatisflex.core.paginate.Page;
+import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.example.yuanqu.Customer.entity.GeneratedContent;
 import com.example.yuanqu.Customer.mapper.GeneratedContentMapper;
@@ -27,29 +29,56 @@ public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMap
     @Resource
     private GeneratedContentMapper generatedContentMapper;
 
+    //单增
+    @Override
+    public Boolean addContent(GeneratedContent content) {
+        return generatedContentMapper.insert(content) > 0;
+    }
+
+    //修改
+    @Override
+    public Boolean updateContent(GeneratedContent content) {
+        return generatedContentMapper.update(content) > 0;
+    }
+
+    //查询条件通用方法
+    @Override
+    public GeneratedContent getContent(GeneratedContent content) {
+        QueryWrapper wrapper = QueryWrapper.create()
+                .eq("id", content.getId())
+                .eq("contract_date",content.getContractDate())
+                .eq("site", content.getSite())
+                .eq("legal_person", content.getLegalPerson())
+                .eq("company", content.getCompany())
+                .eq("channel", content.getChannel())
+                .eq("remark",content.getRemark())
+                .eq("costs",content.getCosts())
+                .eq("lockaddress_date",content.getLockaddressDate())
+                .eq("lock_address",content.getLockAddress())
+                .eq("contract", content.getContract())
+                .eq("account_real_name",content.getAccountRealName())
+                .eq("gmt_modified", content.getGmtModified());
+        return generatedContentMapper.selectOneByQuery(wrapper);
+    }
+
 
     @Override
-    public List<GeneratedContent> listGeneratedContent(GeneratedContent query) {
+    public Boolean batchAdd(List<GeneratedContent> list) {
         return null;
     }
 
     @Override
-    public boolean saveOrUpdateContent(GeneratedContent content) {
-        return false;
-    }
-
-    @Override
-    public boolean removeContent(Long id) {
-        return false;
-    }
-
-    @Override
-    public String uploadContract(MultipartFile file) {
+    public Boolean batchDelete(List<Long> idList) {
         return null;
     }
 
     @Override
-    public void downloadContract(String contractPath, HttpServletResponse response) {
+    public List<GeneratedContent> listContents(GeneratedContent condition) {
+        return null;
+    }
 
+    @Override
+    public Page<GeneratedContent> pageContents(GeneratedContent condition, Page<GeneratedContent> page) {
+        return null;
     }
 }

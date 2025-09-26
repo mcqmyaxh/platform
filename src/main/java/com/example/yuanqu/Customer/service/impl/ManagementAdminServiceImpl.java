@@ -26,7 +26,7 @@ public class ManagementAdminServiceImpl extends ServiceImpl<ManagementAdminMappe
     @Override
     public Boolean addAdmin(ManagementAdmin managementAdmin) {
 
-        return null;
+        return managementAdminMapper.insert(managementAdmin) > 0;
     }
 
     @Override

@@ -16,32 +16,16 @@ import java.util.List;
  * @since 2025-09-22
  */
 public interface GeneratedContentService extends IService<GeneratedContent> {
-    /* ---------- 查询 ---------- */
-    /**
-     * 按条件查询列表（仿 listAdmins 风格）
-     */
-    List<GeneratedContent> listGeneratedContent(GeneratedContent query);
+    /* ---------- 单条 ---------- */
+    Boolean addContent(GeneratedContent content);
+    Boolean updateContent(GeneratedContent content);
+    GeneratedContent getContent(GeneratedContent condition);
 
-    /**
-     * 新增或修改（id 空则新增，非空则修改）
-     */
-    boolean saveOrUpdateContent(GeneratedContent content);
+    /* ---------- 批量 ---------- */
+    Boolean batchAdd(List<GeneratedContent> list);
+    Boolean batchDelete(List<Long> idList);
 
-    /**
-     * 删除合同记录（同时删文件）
-     */
-    boolean removeContent(Long id);
-
-    /* ========== 合同文件 ========== */
-
-    /**
-     * 上传合同
-     */
-    String uploadContract(MultipartFile file);
-
-    /**
-     * 下载合同
-     */
-    void downloadContract(String contractPath, HttpServletResponse response);
-
+    /* ---------- 列表 / 分页 ---------- */
+    List<GeneratedContent> listContents(GeneratedContent condition);
+    Page<GeneratedContent> pageContents(GeneratedContent condition, Page<GeneratedContent> page);
 }
