@@ -22,9 +22,10 @@ public class ManagementAdminServiceImpl extends ServiceImpl<ManagementAdminMappe
     @Resource
     private ManagementAdminMapper managementAdminMapper;
 
-
+    //待完善
     @Override
     public Boolean addAdmin(ManagementAdmin managementAdmin) {
+
         return null;
     }
 
