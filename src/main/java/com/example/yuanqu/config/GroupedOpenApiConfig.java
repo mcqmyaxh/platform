@@ -15,7 +15,7 @@ public class GroupedOpenApiConfig {
     public GroupedOpenApi managementApi() {
         return GroupedOpenApi.builder()
                 .group("管理平台模块") // 这个名字会显示在左上角的下拉框中
-                .packagesToScan("com.example.yuanqu.Management") // 指定扫描的包路径
+                .packagesToScan("com.example.yuanqu.Customer") // 指定扫描的包路径
                 .build();
     }
 

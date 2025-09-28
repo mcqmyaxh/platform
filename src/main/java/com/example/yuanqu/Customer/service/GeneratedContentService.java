@@ -1,5 +1,6 @@
 package com.example.yuanqu.Customer.service;
 
+import com.example.yuanqu.DTO.command.GeneratedContentCommand;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.service.IService;
 import com.example.yuanqu.Customer.entity.GeneratedContent;
@@ -17,15 +18,16 @@ import java.util.List;
  */
 public interface GeneratedContentService extends IService<GeneratedContent> {
     /* ---------- 单条 ---------- */
-    Boolean addContent(GeneratedContent content);
-    Boolean updateContent(GeneratedContent content);
+    Boolean addContent(GeneratedContentCommand command);      // 单增
+    Boolean updateContent(GeneratedContentCommand command);   // 修改
     GeneratedContent getContent(GeneratedContent condition);
 
-    /* ---------- 批量 ---------- */
-    Boolean batchAdd(List<GeneratedContent> list);
+
     Boolean batchDelete(List<Long> idList);
 
     /* ---------- 列表 / 分页 ---------- */
     List<GeneratedContent> listContents(GeneratedContent condition);
     Page<GeneratedContent> pageContents(GeneratedContent condition, Page<GeneratedContent> page);
+
+
 }
