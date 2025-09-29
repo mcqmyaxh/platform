@@ -1,6 +1,10 @@
 package com.example.yuanqu.Customer.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.example.yuanqu.Customer.entity.table.GeneratedContentTableDef;
+import com.example.yuanqu.DTO.VO.GeneratedVO;
 import com.example.yuanqu.DTO.command.GeneratedContentCommand;
+import com.example.yuanqu.DTO.command.UpdateGenertatedContentCommand;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
@@ -11,122 +15,238 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;   // 删掉 icu 的包
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-
 /**
- * 出租表 服务层实现。
+ * 出租表 服务层实现
  *
  * @author Admin
  * @since 2025-09-22
  */
 @Service
-public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMapper, GeneratedContent>  implements GeneratedContentService{
+public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMapper, GeneratedContent>
+        implements GeneratedContentService {
 
     @Resource
     private GeneratedContentMapper generatedContentMapper;
 
+    /* -------------------- 新增 -------------------- */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Boolean addContent(GeneratedContentCommand command) {
-        GeneratedContent entity = GeneratedContent.builder()
-                .contractDate(convertSqlDate(command.getContractDate()))
-                .garden(command.getGarden())
-                .site(command.getSite())
-                .legalPerson(command.getLegalPerson())   // 两边都是 String，直接传
-                .company(command.getCompany())
-                .channel(command.getChannel())
-                .remark(command.getRemark())
-                .costs(new BigDecimal(command.getCosts()))
-                .lockaddressDate(convertLocalDateTime(command.getLockaddressDate()))
-                .lockAddress(command.getLockAddress())
-                .contract(command.getContract())
-                .accountRealName(command.getAccountRealName())
-                .gmtModified(LocalDateTime.now())
-                .build();
+        GeneratedContent entity = buildEntity(command);
+        entity.setAccountRealName("system");
+        entity.setLockaddressDate(null);
         return generatedContentMapper.insert(entity) > 0;
     }
 
+    /* -------------------- 修改 -------------------- */
     @Override
-    public Boolean updateContent(GeneratedContentCommand command) {
+    public Boolean updateContent(UpdateGenertatedContentCommand command) {
         if (command.getId() == null) {
             throw new RuntimeException("ID 不能为空");
         }
+
+        // 1. 日期转换
+        java.sql.Date contractDate = null;
+        if (StringUtils.isNotBlank(command.getContractDate())) {
+            contractDate = java.sql.Date.valueOf(command.getContractDate());
+        }
+
+        // 2. 金额转换
+        java.math.BigDecimal costs = null;
+        if (StringUtils.isNotBlank(command.getCosts())) {
+            try {
+                costs = new java.math.BigDecimal(command.getCosts());
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("费用格式非法：" + command.getCosts());
+            }
+        }
+
         GeneratedContent entity = GeneratedContent.builder()
                 .id(command.getId())
-                .contractDate(convertSqlDate(command.getContractDate()))
+                .contractDate(contractDate)
                 .garden(command.getGarden())
                 .site(command.getSite())
                 .legalPerson(command.getLegalPerson())
                 .company(command.getCompany())
                 .channel(command.getChannel())
                 .remark(command.getRemark())
-                .costs(new BigDecimal(command.getCosts()))
-                .lockaddressDate(convertLocalDateTime(command.getLockaddressDate()))
+                .costs(costs)          // 已经是 BigDecimal
                 .lockAddress(command.getLockAddress())
                 .contract(command.getContract())
-                .accountRealName(command.getAccountRealName())
-                .gmtModified(LocalDateTime.now())
                 .build();
+
+        entity.setGmtModified(LocalDateTime.now());
         return generatedContentMapper.update(entity) > 0;
     }
 
-    /* -------------------- 日期转换工具方法 -------------------- */
-    private java.sql.Date convertSqlDate(String dateStr) {
-        return java.sql.Date.valueOf(LocalDate.parse(dateStr));
-    }
-
-    private LocalDateTime convertLocalDateTime(String dateTimeStr) {
-        return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-    }
-
-    //查询条件通用方法
-    @Override
-    public GeneratedContent getContent(GeneratedContent content) {
-        QueryWrapper wrapper = QueryWrapper.create()
-                .eq("id", content.getId())
-                .eq("contract_date",content.getContractDate())
-                .eq("site", content.getSite())
-                .eq("legal_person", content.getLegalPerson())
-                .eq("company", content.getCompany())
-                .eq("channel", content.getChannel())
-                .eq("remark",content.getRemark())
-                .eq("costs",content.getCosts())
-                .eq("lockaddress_date",content.getLockaddressDate())
-                .eq("lock_address",content.getLockAddress())
-                .eq("contract", content.getContract())
-                .eq("account_real_name",content.getAccountRealName())
-                .eq("gmt_modified", content.getGmtModified());
-        return generatedContentMapper.selectOneByQuery(wrapper);
-    }
-
-
-
-    /* -------------------- 批量删除（物理） -------------------- */
+    /* -------------------- 批量删除 -------------------- */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean batchDelete(List<Long> idList) {
         return removeByIds(idList);
     }
 
-    /* -------------------- 列表查询（通用） -------------------- */
+    /* -------------------- 模糊查询 + 分页 -------------------- */
+    @Override
+    public Page<GeneratedContent> fuzzyQuery(GeneratedContentCommand queryCommand, Integer pageNumber, Integer pageSize) {
+        try {
+            System.out.println("开始模糊查询，页码: " + pageNumber + ", 页大小: " + pageSize);
+
+            QueryWrapper queryWrapper = QueryWrapper.create()
+                    .from(GeneratedContentTableDef.GENERATED_CONTENT);
+
+            // 添加模糊查询条件（排除id字段）
+            if (queryCommand != null) {
+                System.out.println("查询条件: " + queryCommand);
+
+                if (!isEmpty(queryCommand.getGarden())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.GARDEN.like("%" + queryCommand.getGarden() + "%"));
+                    System.out.println("添加园区条件: " + queryCommand.getGarden());
+                }
+                if (!isEmpty(queryCommand.getSite())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.SITE.like("%" + queryCommand.getSite() + "%"));
+                    System.out.println("添加地址条件: " + queryCommand.getSite());
+                }
+                if (!isEmpty(queryCommand.getLegalPerson())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.LEGAL_PERSON.like("%" + queryCommand.getLegalPerson() + "%"));
+                    System.out.println("添加法人条件: " + queryCommand.getLegalPerson());
+                }
+                if (!isEmpty(queryCommand.getCompany())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.COMPANY.like("%" + queryCommand.getCompany() + "%"));
+                    System.out.println("添加公司条件: " + queryCommand.getCompany());
+                }
+                if (!isEmpty(queryCommand.getChannel())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.CHANNEL.like("%" + queryCommand.getChannel() + "%"));
+                    System.out.println("添加渠道条件: " + queryCommand.getChannel());
+                }
+                if (!isEmpty(queryCommand.getRemark())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.REMARK.like("%" + queryCommand.getRemark() + "%"));
+                    System.out.println("添加备注条件: " + queryCommand.getRemark());
+                }
+                if (!isEmpty(queryCommand.getContractDate())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.CONTRACT_DATE.like("%" + queryCommand.getContractDate() + "%"));
+                    System.out.println("添加签约日期条件: " + queryCommand.getContractDate());
+                }
+                if (!isEmpty(queryCommand.getCosts())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.COSTS.like("%" + queryCommand.getCosts() + "%"));
+                    System.out.println("添加费用条件: " + queryCommand.getCosts());
+                }
+                if (!isEmpty(queryCommand.getLockAddress())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.LOCK_ADDRESS.like("%" + queryCommand.getLockAddress() + "%"));
+                    System.out.println("添加锁地址条件: " + queryCommand.getLockAddress());
+                }
+                if (!isEmpty(queryCommand.getContract())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.CONTRACT.like("%" + queryCommand.getContract() + "%"));
+                    System.out.println("添加合同条件: " + queryCommand.getContract());
+                }
+                if (!isEmpty(queryCommand.getAccountRealName())) {
+                    queryWrapper.and(GeneratedContentTableDef.GENERATED_CONTENT.ACCOUNT_REAL_NAME.like("%" + queryCommand.getAccountRealName() + "%"));
+                    System.out.println("添加操作人条件: " + queryCommand.getAccountRealName());
+                }
+
+                // 特别注意：不处理id字段，因为id是精确查询，不是模糊查询
+                System.out.println("忽略id字段作为查询条件");
+            }
+
+            System.out.println("生成的SQL: " + queryWrapper.toSQL());
+
+            // 创建分页对象
+            Page<GeneratedContent> page = new Page<>(pageNumber, pageSize);
+
+            // 执行分页查询
+            Page<GeneratedContent> result = mapper.paginate(page, queryWrapper);
+
+            System.out.println("查询结果: " + result);
+            System.out.println("总记录数: " + result.getTotalRow());
+            System.out.println("当前页记录数: " + (result.getRecords() != null ? result.getRecords().size() : 0));
+            System.out.println("总页数: " + result.getTotalPage());
+
+            return result;
+        } catch (Exception e) {
+            System.err.println("模糊查询出错: " + e.getMessage());
+            e.printStackTrace();
+            // 返回空分页
+            return new Page<>(pageNumber, pageSize);
+        }
+    }
+
+    /* -------------------- 无条件分页查询所有 -------------------- */
+    @Override
+    public Page<GeneratedContent> findAllWithPagination(Integer pageNumber, Integer pageSize) {
+        try {
+            System.out.println("开始无条件查询，页码: " + pageNumber + ", 页大小: " + pageSize);
+
+            QueryWrapper queryWrapper = QueryWrapper.create()
+                    .from(GeneratedContentTableDef.GENERATED_CONTENT);
+
+            System.out.println("无条件查询SQL: " + queryWrapper.toSQL());
+
+            // 创建分页对象
+            Page<GeneratedContent> page = new Page<>(pageNumber, pageSize);
+
+            // 执行分页查询
+            Page<GeneratedContent> result = mapper.paginate(page, queryWrapper);
+
+            System.out.println("无条件查询结果: " + result);
+            System.out.println("总记录数: " + result.getTotalRow());
+            System.out.println("当前页记录数: " + (result.getRecords() != null ? result.getRecords().size() : 0));
+            System.out.println("总页数: " + result.getTotalPage());
+
+            return result;
+        } catch (Exception e) {
+            System.err.println("无条件查询出错: " + e.getMessage());
+            e.printStackTrace();
+            return new Page<>(pageNumber, pageSize);
+        }
+    }
+
     @Override
     public List<GeneratedContent> listContents(GeneratedContent condition) {
-        return list(buildWrapper(condition));
+        return null;
     }
 
-    /* -------------------- 分页查询（通用） -------------------- */
     @Override
-    public Page<GeneratedContent> pageContents(GeneratedContent condition, Page<GeneratedContent> page) {
-        return page(page, buildWrapper(condition));
+    public Page<GeneratedContent> pageGenerated(int page, int size, GeneratedVO vo) {
+        return null;
     }
 
+    /* ========================== 私有工具 ========================== */
 
+    /**
+     * 唯一 buildEntity：Command -> Entity
+     */
+    private GeneratedContent buildEntity(GeneratedContentCommand command) {
+        return GeneratedContent.builder()
+                .id(BigInteger.valueOf(command.getId() == null ? null : command.getId().longValue()))
+                .contractDate(command.getContractDate() == null ? null
+                        : java.sql.Date.valueOf(LocalDate.parse(command.getContractDate())))
+                .garden(command.getGarden())
+                .site(command.getSite())
+                .legalPerson(command.getLegalPerson())
+                .company(command.getCompany())
+                .channel(command.getChannel())
+                .remark(command.getRemark())
+                .costs(command.getCosts() == null ? null : new BigDecimal(command.getCosts()))
+                .lockaddressDate(command.getLockaddressDate() == null ? null
+                        : LocalDateTime.parse(command.getLockaddressDate(),
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                .lockAddress(command.getLockAddress())
+                .contract(command.getContract())
+                .accountRealName(command.getAccountRealName())
+                .gmtModified(LocalDateTime.now())
+                .build();
+    }
 
-    /* -------------------- 私有：通用 Wrapper（不判断 null） -------------------- */
+    /**
+     * 通用 Wrapper（按实体字段精确查询）
+     */
     private QueryWrapper buildWrapper(GeneratedContent c) {
         return QueryWrapper.create()
                 .eq("id", c.getId())
@@ -146,26 +266,31 @@ public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMap
                 .orderBy("gmt_create", false);
     }
 
-    /* -------------------- 私有：Command -> Entity -------------------- */
-    private GeneratedContent buildEntity(GeneratedContentCommand cmd) {
-        return GeneratedContent.builder()
-                .id(cmd.getId())
-                .contractDate(cmd.getContractDate() == null ? null :
-                        java.sql.Date.valueOf(LocalDate.parse(cmd.getContractDate())))
-                .garden(cmd.getGarden())
-                .site(cmd.getSite())
-                .legalPerson(cmd.getLegalPerson())
-                .company(cmd.getCompany())
-                .channel(cmd.getChannel())
-                .remark(cmd.getRemark())
-                .costs(cmd.getCosts() == null ? null :
-                        new BigDecimal(cmd.getCosts()))
-                .lockaddressDate(cmd.getLockaddressDate() == null ? null :
-                        LocalDateTime.parse(cmd.getLockaddressDate(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                .lockAddress(cmd.getLockAddress())
-                .contract(cmd.getContract())
-                .accountRealName(cmd.getAccountRealName())
-                .gmtModified(LocalDateTime.now())
-                .build();
+    /**
+     * 检查字符串是否为空
+     */
+    private boolean isEmpty(String str) {
+        return str == null || str.trim().isEmpty();
+    }
+
+    /**
+     * 检查数据是否存在
+     */
+    public String checkDataExists() {
+        try {
+            long count = this.count();
+            System.out.println("数据库中的总记录数: " + count);
+
+            if (count > 0) {
+                List<GeneratedContent> list = this.list();
+                System.out.println("成功查询到 " + list.size() + " 条记录");
+                return "数据库中有 " + count + " 条记录";
+            } else {
+                return "数据库中没有记录";
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "查询数据库时出错: " + e.getMessage();
+        }
     }
 }

@@ -10,8 +10,6 @@ import java.io.Serializable;
 /**
  * 通用返回对象
  *
- * @author harry
- * @公众号 Harry技术
  */
 @Data
 @NoArgsConstructor
