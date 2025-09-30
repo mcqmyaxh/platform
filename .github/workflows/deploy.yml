@@ -34,8 +34,8 @@ jobs:
           target: "/root/springboot"
           strip_components: 1
 
-
-      # 5. 重启服务（改进版本）hhh
+      # 5. 重启服务（修复版本）
+      # 5. 重启服务（改进版本）
       - name: Restart application
         uses: appleboy/ssh-action@v1.0.3
         with:
