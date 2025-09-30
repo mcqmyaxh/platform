@@ -2,6 +2,7 @@ package com.example.yuanqu.Customer.service.impl;
 
 import com.mybatisflex.core.logicdelete.LogicDeleteManager;
 import com.mybatisflex.core.query.QueryWrapper;
+import com.mybatisflex.processor.util.StrUtil;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
 import com.example.yuanqu.Customer.entity.ManagementAdmin;
 import com.example.yuanqu.Customer.mapper.ManagementAdminMapper;
@@ -9,6 +10,7 @@ import com.example.yuanqu.Customer.service.ManagementAdminService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -25,6 +27,29 @@ public class ManagementAdminServiceImpl extends ServiceImpl<ManagementAdminMappe
     //待完善
     @Override
     public Boolean addAdmin(ManagementAdmin managementAdmin) {
+        if (managementAdmin == null
+                || StrUtil.isBlank(managementAdmin.getUsername())
+                || StrUtil.isBlank(managementAdmin.getPassword())
+                || StrUtil.isBlank(managementAdmin.getRealName())
+                || StrUtil.isBlank(managementAdmin.getPhone())) {
+            return false;
+        }
+
+        // 唯一性校验
+        boolean usernameExists = this.count(QueryWrapper.create()
+                .eq(ManagementAdmin::getUsername, managementAdmin.getUsername())) > 0;
+        boolean phoneExists = this.count(QueryWrapper.create()
+                .eq(ManagementAdmin::getPhone, managementAdmin.getPhone())) > 0;
+
+        if (usernameExists || phoneExists) {
+            return false;
+        }
+
+        // 默认值
+        managementAdmin.setIsDelete(0);
+        managementAdmin.setPermissionLevel(10);   // 可按业务调整
+        managementAdmin.setGmtCreate(LocalDateTime.now());
+        managementAdmin.setGmtModified(LocalDateTime.now());
 
         return managementAdminMapper.insert(managementAdmin) > 0;
     }
