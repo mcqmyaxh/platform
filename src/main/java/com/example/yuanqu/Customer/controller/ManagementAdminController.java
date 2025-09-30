@@ -36,27 +36,7 @@ public class ManagementAdminController {
                 : ResultData.failed("新增失败，用户名或手机号已存在");
     }
 
-    //    @PostMapping("/addAdmin")
-//    @Operation(summary = "添加管理员(暂时别用)", description = "添加管理员接口")
-//    @Tag(name = "管理员信息")
-//    @PreAuthorize("@ss.hasPermission('addAdmin')")
-//    public ResultData<Boolean> addAdmin(@RequestBody InsertAdminCommand command){
-//
-//        Long id= UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
-//        BigInteger bigIntegerId = BigInteger.valueOf(id);
-//
-//        ManagementAdmin managementAdmin = ManagementAdmin.builder()
-//                .id(bigIntegerId)
-//                .username(command.getUsername())
-//                .password(command.getPassword())
-//                .realName(command.getRealName())
-//                .phone(command.getPhone())
-//                .permissionLevel(command.getPermissionLevel())
-//                .build();
-//
-//        Boolean result = managementAdminService.addAdmin(managementAdmin);
-//        return result ? ResultData.success(result,"添加成功") : ResultData.failed("添加失败");
-//    }
+
 
     /**
      * TODO 等待修复
