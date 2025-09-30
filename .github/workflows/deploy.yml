@@ -35,7 +35,6 @@ jobs:
           strip_components: 1
 
       # 5. 重启服务（修复版本）
-
       - name: Restart application
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -45,10 +44,10 @@ jobs:
           script: |
             cd /root/springboot
 
-            # 方案1：使用端口检查的方式（推荐）
+            # 检查并杀死现有进程
             echo "Checking for existing process on port 9011..."
             PID=$(lsof -ti:9011 || echo "")
-            if [ ! -z "$PID" ]; then
+            if [ -n "$PID" ]; then
               echo "Killing existing process: $PID"
               kill -9 $PID
               sleep 3
@@ -61,43 +60,50 @@ jobs:
               cp app.log "app.log.$(date +%Y%m%d_%H%M%S).bak"
             fi
 
-            # 启动新进程
+            # 启动新进程（强制使用 IPv4）
             echo "Starting new SpringBoot application..."
-            nohup java -jar *.jar --server.port=9011 > app.log 2>&1 &
+            nohup java -Djava.net.preferIPv4Stack=true -jar *.jar --server.port=9011 > app.log 2>&1 &
+            START_PID=$!
 
-            # 等待启动并检查
+            # 等待应用初始化
             echo "Waiting for application to start..."
             sleep 30
 
-            # 检查进程是否启动成功
-            NEW_PID=$(lsof -ti:9011 || echo "")
-            if [ ! -z "$NEW_PID" ]; then
-              echo "✅ SpringBoot restarted successfully on port 9011 (PID: $NEW_PID)"
-
-              # 健康检查（等待应用完全启动）
-              echo "Performing health check..."
-              for i in {1..10}; do
-                if curl -f -s http://localhost:9011/actuator/health > /dev/null 2>&1; then
-                  echo "✅ Health check passed!"
-                  echo "📝 Log file: /root/springboot/app.log"
-                  echo "🌐 Application URL: http://120.24.109.29:9011"
-                  break
-                else
-                  echo "⏳ Waiting for application to be ready... ($i/10)"
-                  sleep 10
-                fi
-              done
-
-              # 最终检查
-              if ! curl -f -s http://localhost:9011/actuator/health > /dev/null 2>&1; then
-                echo "❌ Health check failed after multiple attempts"
-                echo "=== Last 50 lines of app.log ==="
-                tail -50 app.log || echo "No log file found"
-                exit 1
-              fi
-            else
-              echo "❌ Failed to restart SpringBoot application"
+            # 检查进程是否仍在运行
+            if ! kill -0 $START_PID 2>/dev/null; then
+              echo "❌ Java process crashed after startup!"
               echo "=== Last 50 lines of app.log ==="
               tail -50 app.log || echo "No log file found"
               exit 1
             fi
+
+            # 检查端口是否监听
+            NEW_PID=$(lsof -ti:9011 || echo "")
+            if [ -z "$NEW_PID" ]; then
+              echo "❌ No process found listening on port 9011"
+              echo "=== Last 50 lines of app.log ==="
+              tail -50 app.log || echo "No log file found"
+              exit 1
+            fi
+
+            echo "✅ SpringBoot restarted successfully on port 9011 (PID: $NEW_PID)"
+
+            # 健康检查（使用 127.0.0.1 避免 localhost 解析问题）
+            echo "Performing health check..."
+            for i in {1..10}; do
+              if curl -f -s http://127.0.0.1:9011/actuator/health > /dev/null 2>&1; then
+                echo "✅ Health check passed!"
+                echo "📝 Log file: /root/springboot/app.log"
+                echo "🌐 Application URL: http://120.24.109.29:9011"
+                exit 0  # 成功退出
+              else
+                echo "⏳ Waiting for application to be ready... ($i/10)"
+                sleep 10
+              fi
+            done
+
+            # 最终失败处理
+            echo "❌ Health check failed after multiple attempts"
+            echo "=== Last 50 lines of app.log ==="
+            tail -50 app.log || echo "No log file found"
+            exit 1

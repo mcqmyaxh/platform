@@ -10,7 +10,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.config.Customizer;
 
 @Configuration
 public class SecurityConfig {
@@ -19,11 +18,14 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll() // 👈 放行健康检查
+                .authorizeHttpRequests(authz -> authz
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults());
+                .httpBasic(httpBasic -> httpBasic.disable()) // 👈 禁用 HTTP Basic（除非你明确需要）
+        // 如果你需要 HTTP Basic 认证，请保留下面这行并删除上面一行：
+        // .httpBasic(Customizer.withDefaults())
+        ;
         return http.build();
     }
 
