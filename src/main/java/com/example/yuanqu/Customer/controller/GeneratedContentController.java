@@ -34,7 +34,7 @@ public class GeneratedContentController {
     private GeneratedContentService generatedContentService;
 
     @Resource
-    private  ManagementAdminMapper managementAdminMapper; // ← 加上
+    private ManagementAdminMapper managementAdminMapper; // ← 加上
 
     /* -------------------- 新增 -------------------- */
     @PostMapping("/addgarden")
@@ -82,41 +82,45 @@ public class GeneratedContentController {
 
     @PostMapping("/fuzzy-query")
     @Operation(summary = "模糊查询 + 分页")
-    public Page<GeneratedContent> fuzzyQuery(@RequestBody(required = false) GeneratedContentCommand queryCommand,
-                                             @RequestParam(defaultValue = "1") Integer pageNumber,
-                                             @RequestParam(defaultValue = "10") Integer pageSize) {
-        // 如果 queryCommand 为 null，创建一个空的
-        if (queryCommand == null) {
-            queryCommand = new GeneratedContentCommand();
+    public ResultData<Page<GeneratedContent>> fuzzyQuery(@RequestBody(required = false) GeneratedContentCommand queryCommand,
+                                                         @RequestParam(defaultValue = "1") Integer pageNumber,
+                                                         @RequestParam(defaultValue = "10") Integer pageSize) {
+        try {
+            // 如果 queryCommand 为 null，创建一个空的
+            if (queryCommand == null) {
+                queryCommand = new GeneratedContentCommand();
+            }
+            Page<GeneratedContent> result = generatedContentService.fuzzyQuery(queryCommand, pageNumber, pageSize);
+            return ResultData.success(result, "查询成功");
+        } catch (Exception e) {
+            return ResultData.failed("模糊查询失败: " + e.getMessage());
         }
-        return generatedContentService.fuzzyQuery(queryCommand, pageNumber, pageSize);
     }
-
 
     @GetMapping("/all")
     @Operation(summary = "无条件分页查询所有信息")
-    public Page<GeneratedContent> findAllWithPagination(@RequestParam(defaultValue = "1") Integer pageNumber,
-                                                        @RequestParam(defaultValue = "10") Integer pageSize) {
-        return generatedContentService.findAllWithPagination(pageNumber, pageSize);
+    public ResultData<Page<GeneratedContent>> findAllWithPagination(@RequestParam(defaultValue = "1") Integer pageNumber,
+                                                                    @RequestParam(defaultValue = "10") Integer pageSize) {
+        try {
+            Page<GeneratedContent> result = generatedContentService.findAllWithPagination(pageNumber, pageSize);
+            return ResultData.success(result, "查询成功");
+        } catch (Exception e) {
+            return ResultData.failed("分页查询失败: " + e.getMessage());
+        }
     }
 
     @GetMapping("/simple-list")
     @Operation(summary = "简单列表查询")
-    public java.util.Map<String, Object> simpleList() {
+    public ResultData<java.util.Map<String, Object>> simpleList() {
         try {
             java.util.List<GeneratedContent> list = generatedContentService.list();
-            return java.util.Map.of(
-                    "code", 200,
-                    "message", "操作成功",
-                    "data", list,
+            java.util.Map<String, Object> data = java.util.Map.of(
+                    "list", list,
                     "total", list.size()
             );
+            return ResultData.success(data, "操作成功");
         } catch (Exception e) {
-            return java.util.Map.of(
-                    "code", 500,
-                    "message", "查询失败: " + e.getMessage(),
-                    "data", null
-            );
+            return ResultData.failed("查询失败: " + e.getMessage());
         }
     }
 }

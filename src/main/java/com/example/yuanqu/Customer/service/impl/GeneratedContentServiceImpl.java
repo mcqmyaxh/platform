@@ -2,9 +2,11 @@ package com.example.yuanqu.Customer.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.example.yuanqu.Customer.entity.table.GeneratedContentTableDef;
+import com.example.yuanqu.Customer.mapper.ManagementAdminMapper;
 import com.example.yuanqu.DTO.VO.GeneratedVO;
 import com.example.yuanqu.DTO.command.GeneratedContentCommand;
 import com.example.yuanqu.DTO.command.UpdateGenertatedContentCommand;
+import com.example.yuanqu.util.SqlHelper;
 import com.mybatisflex.core.paginate.Page;
 import com.mybatisflex.core.query.QueryWrapper;
 import com.mybatisflex.spring.service.impl.ServiceImpl;
@@ -12,9 +14,11 @@ import com.example.yuanqu.Customer.entity.GeneratedContent;
 import com.example.yuanqu.Customer.mapper.GeneratedContentMapper;
 import com.example.yuanqu.Customer.service.GeneratedContentService;
 import jakarta.annotation.Resource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import lombok.extern.slf4j.Slf4j;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -28,12 +32,22 @@ import java.util.List;
  * @author Admin
  * @since 2025-09-22
  */
+@Slf4j   // <- 自动生成 log 对象
 @Service
 public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMapper, GeneratedContent>
         implements GeneratedContentService {
 
     @Resource
     private GeneratedContentMapper generatedContentMapper;
+
+
+
+    @Resource
+    private ManagementAdminMapper managementAdminMapper;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
 
     /* -------------------- 新增 -------------------- */
     @Override
@@ -42,6 +56,18 @@ public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMap
         GeneratedContent entity = buildEntity(command);
         entity.setAccountRealName("system");
         entity.setLockaddressDate(null);
+
+        log.warn("【即将入库】account_real_name = [{}]", entity.getAccountRealName());
+
+        /* 1. 清空触发器变量，防止被覆盖成 NULL */
+        jdbcTemplate.execute("SET @current_real_name = NULL");
+
+        /* 2. 必须存在 'system' 管理员，否则抛业务异常 */
+        if (!managementAdminMapper.existsByRealName("system")) {
+            throw new RuntimeException("系统管理员 real_name='system' 不存在，请先联系运维在 management_admin 表添加");
+        }
+
+        /* 3. 插入 */
         return generatedContentMapper.insert(entity) > 0;
     }
 
@@ -83,6 +109,7 @@ public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMap
                 .build();
 
         entity.setGmtModified(LocalDateTime.now());
+
         return generatedContentMapper.update(entity) > 0;
     }
 
