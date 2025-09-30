@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.Customizer;
+
 @Configuration
 public class SecurityConfig {
 
@@ -19,10 +20,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll() // 👈 放行健康检查
                         .anyRequest().authenticated()
                 )
-                // 替换被弃用的 httpBasic()
-                .httpBasic(Customizer.withDefaults());   // 👈 官方推荐
+                .httpBasic(Customizer.withDefaults());
         return http.build();
     }
 
