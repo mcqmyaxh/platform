@@ -34,15 +34,28 @@ public class GeneratedContentController {
     private GeneratedContentService generatedContentService;
 
     @Resource
-    private ManagementAdminMapper managementAdminMapper; // ← 加上
+    private  ManagementAdminMapper managementAdminMapper; // ← 加上
 
     /* -------------------- 新增 -------------------- */
-    @PostMapping("/addgarden")
-    @Operation(summary = "新增挂靠清单", description = "单条新增挂靠信息")
-    public ResultData<Boolean> addContent(@Valid @RequestBody GeneratedContentCommand command) {
-        return generatedContentService.addContent(command)
-                ? ResultData.success(true, "创建成功")
-                : ResultData.failed("创建失败");
+    @PostMapping("/addContent")
+    @Operation(summary = "新增挂靠清单", description = "除ID外其余字段均可空，后端自动补全默认值")
+    public ResultData<Boolean> addContent(@RequestBody GeneratedContentCommand command) {
+        // 1. 快速参数校验：必填字段
+        if (StringUtils.isBlank(command.getContractDate())
+                || StringUtils.isBlank(command.getGarden())
+                || StringUtils.isBlank(command.getSite())
+                || StringUtils.isBlank(command.getLegalPerson())
+                || StringUtils.isBlank(command.getCompany())
+                || StringUtils.isBlank(command.getChannel())
+                || StringUtils.isBlank(command.getCosts())) {
+            return ResultData.failed("签约日期、园区、地址房号、法人、公司、渠道、费用为必填项");
+        }
+
+        // 2. 调用 service 落库
+        Boolean result = generatedContentService.addContent(command);
+
+        // 3. 统一返回
+        return result ? ResultData.success(true, "创建成功") : ResultData.failed("创建失败");
     }
 
     @PutMapping("/updategarden")

@@ -53,22 +53,51 @@ public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMap
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Boolean addContent(GeneratedContentCommand command) {
-        GeneratedContent entity = buildEntity(command);
-        entity.setAccountRealName("system");
-        entity.setLockaddressDate(null);
-
-        log.warn("【即将入库】account_real_name = [{}]", entity.getAccountRealName());
-
-        /* 1. 清空触发器变量，防止被覆盖成 NULL */
-        jdbcTemplate.execute("SET @current_real_name = NULL");
-
-        /* 2. 必须存在 'system' 管理员，否则抛业务异常 */
-        if (!managementAdminMapper.existsByRealName("system")) {
-            throw new RuntimeException("系统管理员 real_name='system' 不存在，请先联系运维在 management_admin 表添加");
+        /* 1. 基础校验 */
+        if (command == null) {
+            throw new RuntimeException("参数不能为空");
         }
 
-        /* 3. 插入 */
-        return generatedContentMapper.insert(entity) > 0;
+        /* 2. 签约日期转换 */
+        java.sql.Date contractDate;
+        try {
+            contractDate = java.sql.Date.valueOf(command.getContractDate());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("签约日期格式非法，应为 yyyy-MM-dd");
+        }
+
+        /* 3. 费用转换 */
+        BigDecimal costs;
+        try {
+            costs = new BigDecimal(command.getCosts());
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("费用格式非法：" + command.getCosts());
+        }
+
+        /* 4. 操作人合法性校验（可选，根据业务） */
+        if (StringUtils.isNotBlank(command.getAccountRealName())
+                && !managementAdminMapper.existsByRealName(command.getAccountRealName())) {
+            throw new RuntimeException("操作人不存在：" + command.getAccountRealName());
+        }
+
+        /* 5. 构造实体 */
+        GeneratedContent entity = GeneratedContent.builder()
+                .contractDate(contractDate)
+                .garden(command.getGarden())
+                .site(command.getSite())
+                .legalPerson(command.getLegalPerson())
+                .company(command.getCompany())
+                .channel(command.getChannel())
+                .remark(command.getRemark())
+                .costs(costs)
+                .lockAddress(command.getLockAddress())
+                .contract(command.getContract())
+                .accountRealName(command.getAccountRealName()) // 触发器可再补填
+                .gmtModified(LocalDateTime.now())
+                .build();
+
+        /* 6. 入库 */
+        return generatedContentMapper.insert(entity, true) > 0;
     }
 
     /* -------------------- 修改 -------------------- */
