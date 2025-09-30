@@ -19,13 +19,23 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        // 放行健康检查和接口文档
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/info",
+                                // Swagger UI (SpringDoc)
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/webjars/**",
+                                // Knife4j (如果使用)
+                                "/doc.html"
+                        ).permitAll()
+                        // 其他所有请求都需要认证
                         .anyRequest().authenticated()
                 )
-                .httpBasic(httpBasic -> httpBasic.disable()) // 👈 禁用 HTTP Basic（除非你明确需要）
-        // 如果你需要 HTTP Basic 认证，请保留下面这行并删除上面一行：
-        // .httpBasic(Customizer.withDefaults())
-        ;
+                // 启用 HTTP Basic 认证（用于 API 测试）
+                .httpBasic(httpBasic -> httpBasic.disable()); // 👈 如需启用，改为 .withDefaults()
         return http.build();
     }
 
