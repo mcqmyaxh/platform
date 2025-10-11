@@ -13,7 +13,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @ComponentScan(basePackages = {
-        "com.example",                   // 你自己的代码
+        "com.example.yuanqu",                   // 你自己的代码
 
 })
 @ConfigurationPropertiesScan
