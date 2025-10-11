@@ -120,7 +120,7 @@ public class ManagementAdminController {
     /**
      * 管理员手机号+密码登录
      */
-    @PostMapping("/admin/login")
+    @PostMapping("/adminlogin")
     @Operation(summary = "管理员信息", description = "手机号+密码登录")
     public ResultData<Map<String, Object>> adminLogin(
             @RequestParam("adminPhone") String adminPhone,
