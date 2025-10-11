@@ -8,6 +8,7 @@ import com.example.yuanqu.Customer.entity.ManagementAdmin;
 import com.example.yuanqu.Customer.mapper.ManagementAdminMapper;
 import com.example.yuanqu.Customer.service.ManagementAdminService;
 import jakarta.annotation.Resource;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -82,5 +83,34 @@ public class ManagementAdminServiceImpl extends ServiceImpl<ManagementAdminMappe
                 .eq("permission_level",managementAdmin.getPermissionLevel())
                 .between("gmt_create",managementAdmin.getGmtCreate(),managementAdmin.getGmtModified());
         return managementAdminMapper.selectListByQuery(wrapper);
+    }
+
+    @Override
+    public ManagementAdmin loginByPhoneAndPassword(String phone, String password) {
+        if (StrUtil.isBlank(phone) || StrUtil.isBlank(password)) {
+            return null;
+        }
+        // 1. 查手机号
+        ManagementAdmin admin = this.mapper.selectOneByQuery(
+                QueryWrapper.create().eq(ManagementAdmin::getPhone, phone));
+        if (admin == null) {
+            return null;
+        }
+        // 2. 验证密码（数据库存的是 BCrypt 密文）
+        //  如果库里的密码是明文，先把它按 BCrypt 加密一次再比对
+        String dbPassword = admin.getPassword();
+        if (!dbPassword.startsWith("$2a$") && !dbPassword.startsWith("$2b$")) {
+            // 说明库存的是明文，现场加密后写回，并重新赋值用于本次比对
+            dbPassword = new BCryptPasswordEncoder().encode(dbPassword);
+            admin.setPassword(dbPassword);
+            this.mapper.update(admin);          // 写回密文，下次就是密文了
+        }
+        boolean match = new BCryptPasswordEncoder().matches(password, dbPassword);
+        if (!match) {
+            return null;
+        }
+        // 3. 脱敏后返回
+        admin.setPassword(null);
+        return admin;
     }
 }

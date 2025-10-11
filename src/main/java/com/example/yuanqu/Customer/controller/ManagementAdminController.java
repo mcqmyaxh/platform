@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/Platform")
@@ -112,6 +114,33 @@ public class ManagementAdminController {
 
         List<ManagementAdmin> result = managementAdminService.listAdmins(managementAdmin);
         return result != null ? ResultData.success(result,"获取成功") : ResultData.failed("获取失败");
+    }
+
+
+    /**
+     * 管理员手机号+密码登录
+     */
+    @PostMapping("/login")
+    @Operation(summary = "管理员登录", description = "手机号+密码登录")
+    public ResultData<Map<String, Object>> adminLogin(
+            @RequestParam("adminPhone") String adminPhone,
+            @RequestParam("adminPassword") String adminPassword) {
+
+        ManagementAdmin admin = managementAdminService.loginByPhoneAndPassword(adminPhone, adminPassword);
+        if (admin == null) {
+            return ResultData.failed("手机号或密码错误");
+        }
+
+        // 生成简单 token（正式项目请用 JWT）
+        String token = UUID.randomUUID().toString();
+
+        // 返回前端需要的数据
+        Map<String, Object> data = Map.of(
+                "token", token,
+                "adminId", admin.getId(),
+                "realName", admin.getRealName()
+        );
+        return ResultData.success(data, "登录成功");
     }
 
 }
