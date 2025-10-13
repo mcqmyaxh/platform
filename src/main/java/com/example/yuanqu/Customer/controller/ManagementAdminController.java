@@ -141,18 +141,9 @@ public class ManagementAdminController {
         Map<String, Object> data = Map.of(
                 "token", token,
                 "adminId", admin.getId(),
-                "username", admin.getUsername(),
-                "password", admin.getPassword(),
-                "realName", Objects.requireNonNullElse(admin.getRealName(), ""),
-                "phone", admin.getPhone(),
-                "permissionLevel", Objects.requireNonNullElse(admin.getPermissionLevel(), 0),
-                "isDelete", admin.getIsDelete(),
-                "gmtCreate", admin.getGmtCreate(),
-                "gmtModified", Objects.requireNonNullElse(admin.getGmtModified(), "")
+                "realName", admin.getRealName()
         );
-        System.out.println("admin = " + admin);
         return ResultData.success(data, "登录成功");
-
     }
 
 }
