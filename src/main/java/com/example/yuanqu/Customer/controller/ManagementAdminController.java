@@ -12,10 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequestMapping("/Platform")
@@ -137,12 +134,20 @@ public class ManagementAdminController {
         // 生成简单 token（正式项目请用 JWT）
         String token = UUID.randomUUID().toString();
 
-        // 返回前端需要的数据
-        Map<String, Object> data = Map.of(
-                "token", token,
-                "adminId", admin.getId(),
-                "realName", admin.getRealName()
-        );
+        // 返回前端需要的数据（允许 null，避免 Map.of 抛 NPE）
+        Map<String, Object> data = new HashMap<>();
+        data.put("token", token);
+        data.put("adminId", admin.getId());
+        data.put("username", admin.getUsername());
+        // data.put("password", admin.getPassword()); // 生产环境建议不要返回密码
+        data.put("realName", admin.getRealName());
+        data.put("phone", admin.getPhone());
+        data.put("permissionLevel", admin.getPermissionLevel());
+        data.put("isDelete", admin.getIsDelete());
+        data.put("gmtCreate", admin.getGmtCreate());
+        data.put("gmtModified", admin.getGmtModified());
+
+        System.out.println("admin = " + admin);
         return ResultData.success(data, "登录成功");
     }
 
