@@ -25,7 +25,7 @@ public class ManagementAdminController {
      * TODO 等待修复
      * @return
      */
-    @PostMapping
+    @PostMapping("/addAdmin")
     @Operation(summary = "新增管理员", description = "新增管理员接口（手机号唯一）")
     @Tag(name = "管理员信息")
     @PreAuthorize("@ss.hasPermission('addAdmin')")
