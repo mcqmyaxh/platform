@@ -14,6 +14,7 @@ import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 @RestController
@@ -140,9 +141,18 @@ public class ManagementAdminController {
         Map<String, Object> data = Map.of(
                 "token", token,
                 "adminId", admin.getId(),
-                "realName", admin.getRealName()
+                "username", admin.getUsername(),
+                "password", admin.getPassword(),
+                "realName", Objects.requireNonNullElse(admin.getRealName(), ""),
+                "phone", admin.getPhone(),
+                "permissionLevel", Objects.requireNonNullElse(admin.getPermissionLevel(), 0),
+                "isDelete", admin.getIsDelete(),
+                "gmtCreate", admin.getGmtCreate(),
+                "gmtModified", Objects.requireNonNullElse(admin.getGmtModified(), "")
         );
+        System.out.println("admin = " + admin);
         return ResultData.success(data, "登录成功");
+
     }
 
 }
