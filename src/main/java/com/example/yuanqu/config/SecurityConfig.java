@@ -19,10 +19,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/Platform/addAdmin").permitAll() // ✅ 先放行
                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults());
+                // 替换被弃用的 httpBasic()
+                .httpBasic(Customizer.withDefaults());   // 👈 官方推荐
         return http.build();
     }
 
