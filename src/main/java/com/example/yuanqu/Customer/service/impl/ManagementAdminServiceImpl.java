@@ -48,7 +48,7 @@ public class ManagementAdminServiceImpl extends ServiceImpl<ManagementAdminMappe
 
         // 默认值
         managementAdmin.setIsDelete(0);
-        managementAdmin.setPermissionLevel(10);   // 可按业务调整
+        managementAdmin.setPermissionLevel(11);   // 可按业务调整
         managementAdmin.setGmtCreate(LocalDateTime.now());
         managementAdmin.setGmtModified(LocalDateTime.now());
 
