@@ -135,6 +135,7 @@ public class GeneratedContentServiceImpl extends ServiceImpl<GeneratedContentMap
                 .costs(costs)          // 已经是 BigDecimal
                 .lockAddress(command.getLockAddress())
                 .contract(command.getContract())
+                .accountRealName(command.getAccountRealName()) // 新增：更新操作人
                 .build();
 
         entity.setGmtModified(LocalDateTime.now());
