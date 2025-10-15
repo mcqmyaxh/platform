@@ -10,6 +10,7 @@ import com.example.yuanqu.Customer.service.ManagementAdminService;
 import jakarta.annotation.Resource;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ import java.util.List;
 public class ManagementAdminServiceImpl extends ServiceImpl<ManagementAdminMapper, ManagementAdmin>  implements ManagementAdminService{
     @Resource
     private ManagementAdminMapper managementAdminMapper;
+
 
     @Override
     public Boolean addAdmin(ManagementAdmin managementAdmin) {
