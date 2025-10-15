@@ -8,7 +8,8 @@ import com.example.yuanqu.Customer.entity.ManagementAdmin;
 import com.example.yuanqu.Customer.mapper.ManagementAdminMapper;
 import com.example.yuanqu.Customer.service.ManagementAdminService;
 import jakarta.annotation.Resource;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,7 +26,6 @@ public class ManagementAdminServiceImpl extends ServiceImpl<ManagementAdminMappe
     @Resource
     private ManagementAdminMapper managementAdminMapper;
 
-
     @Override
     public Boolean addAdmin(ManagementAdmin managementAdmin) {
         if (managementAdmin == null
@@ -34,6 +34,12 @@ public class ManagementAdminServiceImpl extends ServiceImpl<ManagementAdminMappe
                 || StrUtil.isBlank(managementAdmin.getRealName())
                 || StrUtil.isBlank(managementAdmin.getPhone())) {
             return false;
+        }
+
+        // 权限校验：获取当前登录管理员并检查权限等级
+        ManagementAdmin currentAdmin = getCurrentAdmin();
+        if (currentAdmin == null || currentAdmin.getPermissionLevel() != 20) {
+            return false; // 只有权限等级为20的超级管理员才能添加管理员
         }
 
         // 唯一性校验
@@ -48,11 +54,29 @@ public class ManagementAdminServiceImpl extends ServiceImpl<ManagementAdminMappe
 
         // 默认值
         managementAdmin.setIsDelete(0);
-        managementAdmin.setPermissionLevel(10);   // 可按业务调整
+        managementAdmin.setPermissionLevel(11);   // 可按业务调整
         managementAdmin.setGmtCreate(LocalDateTime.now());
         managementAdmin.setGmtModified(LocalDateTime.now());
 
         return managementAdminMapper.insert(managementAdmin) > 0;
+    }
+
+    /**
+     * 获取当前登录的管理员信息
+     */
+    private ManagementAdmin getCurrentAdmin() {
+        try {
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof UserDetails) {
+                String username = ((UserDetails) principal).getUsername();
+                // 根据用户名查询管理员信息
+                return this.mapper.selectOneByQuery(
+                        QueryWrapper.create().eq(ManagementAdmin::getUsername, username));
+            }
+        } catch (Exception e) {
+            // 如果无法获取当前用户信息，返回null
+        }
+        return null;
     }
 
     @Override
@@ -96,16 +120,10 @@ public class ManagementAdminServiceImpl extends ServiceImpl<ManagementAdminMappe
         if (admin == null) {
             return null;
         }
-        // 2. 验证密码（数据库存的是 BCrypt 密文）
-        //  如果库里的密码是明文，先把它按 BCrypt 加密一次再比对
+        // 2. 验证密码（直接比较明文，不再加密）
         String dbPassword = admin.getPassword();
-        if (!dbPassword.startsWith("$2a$") && !dbPassword.startsWith("$2b$")) {
-            // 说明库存的是明文，现场加密后写回，并重新赋值用于本次比对
-            dbPassword = new BCryptPasswordEncoder().encode(dbPassword);
-            admin.setPassword(dbPassword);
-            this.mapper.update(admin);          // 写回密文，下次就是密文了
-        }
-        boolean match = new BCryptPasswordEncoder().matches(password, dbPassword);
+
+        boolean match = password.equals(dbPassword);
         if (!match) {
             return null;
         }
